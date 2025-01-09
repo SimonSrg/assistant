@@ -187,7 +187,8 @@
           this.currentIndicator.style.top = `${minutes}px`;
           const showedHours = Math.floor(minutes / 60);
           const showedMinutes = minutes - showedHours * 60;
-          this.currentIndicator.textContent = `${showedHours}:${showedMinutes > 9 ? showedMinutes : `0${showedMinutes}`}`;
+          const hours = showedHours < 0 ? 24 + showedHours : showedHours;
+          this.currentIndicator.textContent = `${hours}:${showedMinutes > 9 ? showedMinutes : `0${showedMinutes}`}`;
           console.log("refresh");
         }
         connectedCallback() {
