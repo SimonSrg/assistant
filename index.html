@@ -24,6 +24,7 @@
       :root {
         --bar-width: 160px;
         --current-timezone: rgba(0,0,255,0.05);
+        --today: rgba(0,255,0,0.05);
         --available-range: #eee;
       }
       .operation-bar {
@@ -57,6 +58,7 @@
     <script>
       const RefreshRate = 1000 * 30; // 30 seconds
       const BaseTimeZone = new Date().getTimezoneOffset();
+      
       class TimeBar extends HTMLElement {
         currentIndicator;
         wrapper;
@@ -76,35 +78,42 @@
 
           const wrapper = document.createElement("div");
           this.wrapper = wrapper;
-          wrapper.setAttribute("class", BaseTimeZone === this.timezoneOffset ? "wrapper current-zone" : "wrapper");
+          const isCurrentZone = BaseTimeZone === this.timezoneOffset;
+          wrapper.setAttribute("class", isCurrentZone ? "wrapper current-zone" : "wrapper");
 
           const label = document.createElement("label");
           label.setAttribute("class", "label");
           label.textContent = `${title} UTC+${this.transformMinutesToHoursColonMinutes(-this.timezoneOffset) }`;
 
-          for (let i = 0; i < 24; i++) {
-            const bar = document.createElement("div");
-            bar.setAttribute("class", "bar");
-            const timeLabel = document.createElement("span");
-            timeLabel.setAttribute("class", "time-label");
-            timeLabel.textContent = `${i}:00`;
-            bar.appendChild(timeLabel);
-            wrapper.appendChild(bar);
+          for (let j = 0; j < 3; j++) {
+            const isToday = j === 1;
+            for (let i = 0; i < 24; i++) {
+              const bar = document.createElement("div");
+              bar.setAttribute("class", isToday ? "today bar" : "bar");
+              const timeLabel = document.createElement("span");
+              timeLabel.setAttribute("class", "time-label");
+              timeLabel.textContent = `${i}:00`;
+              bar.appendChild(timeLabel);
+              wrapper.appendChild(bar);
+            } 
           }
 
           this.currentIndicator = document.createElement("div");
           this.currentIndicator.setAttribute("class", "current-indicator");
           wrapper.appendChild(this.currentIndicator);
 
-          workingTimeRanges.forEach(range => {
-            const rangeEle = document.createElement("div");
-            rangeEle.setAttribute("class", "range");
-            const start = range[0].split(":");
-            const end = range[1].split(":");
-            rangeEle.style.top = `${parseFloat(start[0]) * 60 + parseFloat(start[1])}px`;
-            rangeEle.style.height = `${(parseFloat(end[0]) - parseFloat(start[0])) * 60 + parseFloat(end[1]) - parseFloat(start[1])}px`;
-            wrapper.appendChild(rangeEle);
-          });
+          for (let j = 0; j < 3; j++) {
+            const topOffset = j * 60 * 12;
+            workingTimeRanges.forEach(range => {
+              const rangeEle = document.createElement("div");
+              rangeEle.setAttribute("class", "range");
+              const start = range[0].split(":");
+              const end = range[1].split(":");
+              rangeEle.style.top = `${topOffset + parseFloat(start[0]) * 60 + parseFloat(start[1])}px`;
+              rangeEle.style.height = `${(parseFloat(end[0]) - parseFloat(start[0])) * 60 + parseFloat(end[1]) - parseFloat(start[1])}px`;
+              wrapper.appendChild(rangeEle);
+            }); 
+          }
           const style = document.createElement("style");
           style.textContent = `
             * {
@@ -132,6 +141,9 @@
               width: 100%;
               height: 60px;
               border-top: 1px solid #ccc;
+            }
+            .bar.today {
+              background-color: var(--today);
             }
             .time-label {
               font-size: 12px;
@@ -184,7 +196,7 @@
         refreshCurrentIndicator() {
           const currentTime = new Date();
           const minutes = currentTime.getHours() * 60 + currentTime.getMinutes() + BaseTimeZone - this.timezoneOffset;
-          this.currentIndicator.style.top = `${minutes}px`;
+          this.currentIndicator.style.top = `${24 * 60 + minutes}px`;
           const showedHours = Math.floor(minutes / 60);
           const showedMinutes = minutes - showedHours * 60;
           const hours = showedHours < 0 ? 24 + showedHours : showedHours;
